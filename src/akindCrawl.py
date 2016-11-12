@@ -160,8 +160,8 @@ class AKindCrawler(object):
 
     def _process_first_page(self):
         _html_content = self._load_first_page_html()
-        with open('tmp/%s.content.html' % util.md5(self._url), 'w') as fh:
-            fh.write(_html_content)
+        # with open('tmp/%s.content.html' % util.md5(self._url), 'w') as fh:
+        #     fh.write(_html_content)
         if not _html_content:
             return
         # _html_content = _html_content.decode('gbk')
