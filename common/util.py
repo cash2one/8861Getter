@@ -113,9 +113,11 @@ def requests_ex(url, data=None, headers=None, params=None, cookies=None, proxies
         except requests.exceptions.ConnectionError:
             ilog.wflogger.warning("connection fail, url:%s" % url)
             idx += 1
+            time.sleep(5.5)
         except requests.exceptions.Timeout:
             ilog.wflogger.warning("time out, url:%s" % url)
             idx += 1
+            time.sleep(5.5)
         except Exception as e:
             ilog.wflogger.error('download url:%s fail.error:%s' % (url, traceback.format_exc()))
             return None
