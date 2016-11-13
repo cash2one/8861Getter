@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding=utf-8 -*-
-
+import base64
 # 类目初始种子
 seed = 'https://s.1688.com/selloffer/-B0EBC9EDC8B9-1031912.html?spm=a260k.635.1998214977.8.aTne9j&cps=1&earseDirect=false&button_click=top&n=y&uniqfield=pic_tag_id'
 
@@ -15,3 +15,4 @@ enable_price_filter = True
 cookie_file = '/Users/baidu/banmen/1688/src/my_cookie.txt'
 
 cate = '连衣裙'
+cate = base64.b64encode(cate)
