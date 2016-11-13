@@ -83,6 +83,7 @@ class AKindCrawler(object):
         sql = 'insert into resource (url, urlmd5, pic_url, cate) values("%s", "%s", "%s", "%s")' \
               % (url, urlmd5, pic_url, self._cate)
         mysqlTalker.getInstance("spider").execute(sql)
+        ilog.logger.debug('new-extracted:%s.' % url)
 
     def _load_first_page_html(self):
         # return util.jsDownloader(self._url, self._cookie_file)
@@ -115,18 +116,24 @@ class AKindCrawler(object):
             for node in nodes:
                 offerid_node = node.xpath('.//a[@offerid]')
                 if not offerid_node:
+                    ilog.logger.debug('%s has none offerid node.' % url)
                     continue
                 offerid_node = offerid_node[0]
                 offerid = offerid_node.attrib.get('offerid', "")
                 if not offerid:
+                    ilog.logger.debug('%s has a offerid node with no offerid attr.' % url)
                     continue
                 pic_url_node = node.xpath('.//img')
                 if not pic_url_node:
+                    ilog.logger.debug('%s has none img node.' % url)
                     continue
                 pic_url_node = pic_url_node[0]
                 pic_url = pic_url_node.attrib.get('src', "")
                 if not pic_url:
-                    continue
+                    pic_url = pic_url_node.attrib.get('data-lazy-src', "")
+                    if not pic_url:
+                        ilog.logger.debug('%s has a offerid node with no src or data-lazy-src attr.' % url)
+                        continue
                 self._recode_detail_url(offerid, pic_url)
         except Exception as e:
             ilog.wflogger.warn('AKindCrawler::_getItemInfos fail.url=%s, error=%s' % (url, traceback.format_exc()))
