@@ -9,6 +9,7 @@ import time
 import re
 import time
 import copy
+import base64
 from lxml import etree
 # import util
 from common import ilog
@@ -46,7 +47,7 @@ class SubCateBuilder(object):
 
 
     def _init(self):
-        self.sub_cate_url_list.append(self._seed)
+        self.sub_cate_url_list.append((self._seed, 'seeeed'))
         self._html_content = self._get_html_content(self._seed)
         # self._html_content = util.jsDownloader(self._seed, self._cookie_file)
         with open('seed.html', 'w') as fh:
@@ -119,13 +120,17 @@ class SubCateBuilder(object):
                     qs_plus_dict['priceStart'] = p_list[0]
                     if len(p_list) > 1 and p_list[1]:
                         qs_plus_dict['priceEnd'] = p_list[1]
-                    self.sub_cate_url_list.append('%s&%s' % (self._seed, urllib.urlencode(qs_plus_dict)))
+                    tmp_qs = urllib.urlencode(qs_plus_dict)
+                    tmp_info = ('%s&%s' % (self._seed, tmp_qs), base64.b64encode(tmp_qs))
+                    self.sub_cate_url_list.append(tmp_info)
                     if 'priceEnd' in qs_plus_dict:
                         del qs_plus_dict['priceEnd']
                     if 'priceStart' in qs_plus_dict:
                         del qs_plus_dict['priceStart']
             else:
-                self.sub_cate_url_list.append('%s&%s' % (self._seed, urllib.urlencode(qs_plus_dict)))
+                tmp_qs = urllib.urlencode(qs_plus_dict)
+                tmp_info = ('%s&%s' % (self._seed, tmp_qs), base64.b64encode(tmp_qs))
+                self.sub_cate_url_list.append(tmp_info)
                 qs_plus_dict.clear()
 
     def print_feature_info(self, _to_screen=True):
@@ -181,8 +186,8 @@ class SubCateBuilder(object):
         return cnt
 
     def print_sub_url_info(self):
-        for url in self.sub_cate_url_list:
-            print '%s' % url
+        for url_tuple in self.sub_cate_url_list:
+            print '%s' % url_tuple[0]
         print '+++++++++++++ total %s urls +++++++++++++++' % len(self.sub_cate_url_list)
 
     def get_sub_url_info(self):

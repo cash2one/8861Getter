@@ -6,6 +6,7 @@ import json
 import sys
 import Queue
 import threading
+import time
 from optparse import OptionParser
 pwd = os.path.dirname(os.path.realpath(__file__))
 sys.path.append('%s/..' % (pwd))
@@ -39,12 +40,15 @@ class Clawler(threading.Thread):
     def run(self):
         while True:
             try:
-                url = self._queue.get(False)
-                if not url:
+                url_tuple = self._queue.get(False)
+                if not url_tuple:
                     continue
+                url = url_tuple[0]
+                feature_params = url_tuple[1]
                 print url
-                crawler = akindCrawl.AKindCrawler(url, self._cookie_file, self._cate)
+                crawler = akindCrawl.AKindCrawler(url, feature_params, self._cookie_file, self._cate)
                 crawler.work()
+                time.sleep(10)
             except Queue.Empty:
                 break
 
@@ -60,8 +64,10 @@ def main(seed, cate, cookie_file, filter_feature_index_list, enable_price_filter
     sub_cate_builder.print_feature_info(_to_screen=False)
     workQueue = Queue.Queue()  # 低优先级请求队列
     item_url_list = sub_cate_builder.get_sub_url_info()
-    for url in item_url_list:
-        workQueue.put(url)
+    for url_tuple in item_url_list:
+        workQueue.put(url_tuple)
+    # workQueue.put(item_url_list[0])
+    # workQueue.put(item_url_list[1])
 
     worker_num = 1
     workers = []

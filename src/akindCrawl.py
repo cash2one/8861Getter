@@ -8,6 +8,7 @@ import traceback
 import time
 import re
 import time
+import os
 import threading
 from threading import current_thread
 from lxml import etree
@@ -17,8 +18,14 @@ from common import util
 from common import mysqlTalker
 
 class AKindCrawler(object):
-    def __init__(self, url, cookie_file, cate):
+    def __init__(self, url, feature_params, cookie_file, cate):
         self._url = url
+        self._cate = cate
+        self._feature_params = feature_params
+        _tmp_dir = 'tmp/%s' % self._cate
+        if not os.path.exists(_tmp_dir):
+            os.makedirs(_tmp_dir)
+        self._first_page_html_file = '%s/%s.html' % (_tmp_dir, self._feature_params)
         self._cookie_file = cookie_file
         # self._init_cookie_file(cookie_file)
         self._headers = self._get_heades()
@@ -32,7 +39,7 @@ class AKindCrawler(object):
         self._url_filter = re.compile('(http|https)://detail\.1688\.com/offer/\d+.html')
         self._ajax_url_prefix = ''
         self._ajax_qs_dict = {}
-        self._cate = cate
+
 
     def _init_cookie_file(self, cookie_file):
         self._cookie_file = cookie_file + '.' + threading.current_thread().getName()
@@ -160,8 +167,9 @@ class AKindCrawler(object):
 
     def _process_first_page(self):
         _html_content = self._load_first_page_html()
-        # with open('tmp/%s.content.html' % util.md5(self._url), 'w') as fh:
-        #     fh.write(_html_content)
+
+        with open(self._first_page_html_file, 'w') as fh:
+            fh.write(_html_content)
         if not _html_content:
             return
         # _html_content = _html_content.decode('gbk')
@@ -172,10 +180,16 @@ class AKindCrawler(object):
         _total_item_cnt = int(item_cnt_nodes[0].text)
         print '_total_item_cnt:%s' % _total_item_cnt
         self._total_item_cnt = _total_item_cnt
+
+        # 先保存首页的商品信息
+        self._get_items_info(self._url, root_node)
+
         if 0 == self._ajax_size:
+            self._print_info()
             return
 
         if _total_item_cnt < self._ajax_size:
+            self._print_info()
             return
 
         # itemNOdes = root_node.xpath('//div[@class="sm-offer "]//li[@t-rank]')
@@ -186,7 +200,7 @@ class AKindCrawler(object):
         #
         #     self._recode_detail_url
 
-        self._get_items_info(self._url, root_node)
+
 
         _page_cnt = int(_total_item_cnt / self._page_size) + 1
         if _page_cnt < 2:
@@ -233,6 +247,9 @@ class AKindCrawler(object):
 
     def work(self):
         try:
+            if os.path.exists(self._first_page_html_file):
+                ilog.logger.debug('[%s][%s] %s has processed.' % (self._cate, self._feature_params, self._url))
+                return
             self._process_first_page()
             if self._total_pages < 2:
                 return
