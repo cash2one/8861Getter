@@ -40,6 +40,11 @@ class Clawler(threading.Thread):
     def run(self):
         while True:
             try:
+                left_cnt = self._queue.qsize()
+                msg = '\n++++++++++++++++++++++++++\n'
+                msg += '%s sub cates left to be done.' % str(left_cnt)
+                msg += '\n++++++++++++++++++++++++++\n'
+                ilog.logger.debug(msg)
                 url_tuple = self._queue.get(False)
                 if not url_tuple:
                     continue
@@ -48,7 +53,8 @@ class Clawler(threading.Thread):
                 print url
                 crawler = akindCrawl.AKindCrawler(url, feature_params, self._cookie_file, self._cate)
                 crawler.work()
-                time.sleep(10)
+                # 睡眠时间长一些，1688对这种类型url防爬取很严格
+                time.sleep(30)
             except Queue.Empty:
                 break
 

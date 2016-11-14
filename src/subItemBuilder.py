@@ -154,7 +154,7 @@ class SubCateBuilder(object):
             # print feature_msg
             tmp_dict1[i] = item_cnt
             tmp_dict2[i] = feature_msg
-            time.sleep(10)
+            time.sleep(12.5)
             i += 1
         sorted_list = sorted(tmp_dict1.iteritems(), key=lambda d: d[1], reverse=True)
         for item in sorted_list:

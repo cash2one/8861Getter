@@ -91,6 +91,7 @@ class AKindCrawler(object):
         return r.content
 
     def _process_ajax_req(self, url):
+        time.sleep(12.5)
         with open('link.url.txt', 'a') as fh:
             fh.write("%s\n" % (url))
 
@@ -106,7 +107,7 @@ class AKindCrawler(object):
         root_node = etree.HTML(html_content)
         # open('ajax.html', 'w').write(html_content)
         self._get_items_info(url, root_node)
-        time.sleep(8.5)
+
 
     def _get_items_info(self, url, root_node):
         # nodes = root_node.xpath('//a[@offerid]')
