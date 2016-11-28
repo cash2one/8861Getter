@@ -142,11 +142,13 @@ class SubCateBuilder(object):
         tmp_dict2 = {}
 
         # 获取选中属性能召回商品数
-        _all_selected_feature_codes_list = []
+        _all_selected_feature_codes_str = ''
         for one_feature_list in self._selected_feature_list:
-            _all_selected_feature_codes_list.extend(one_feature_list)
-        _all_selected_feature_codes = ','.join(_all_selected_feature_codes_list)
-        _all_selected_item_cnt = self._get_subCate_itemCnt(_all_selected_feature_codes)
+            if '' == _all_selected_feature_codes_str:
+                _all_selected_feature_codes_str = ','.join(one_feature_list)
+            else:
+                _all_selected_feature_codes_str = ';' + ','.join(one_feature_list)
+        _all_selected_item_cnt = self._get_subCate_itemCnt(_all_selected_feature_codes_str)
         msg += '%s: all_selected_item_cnt=%s\n' % (self._cate, _all_selected_item_cnt)
         msg += '---------------------------------------------------------\n\n'
 
