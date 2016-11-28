@@ -88,25 +88,32 @@ class AKindCrawler(object):
     def _load_first_page_html(self):
         # return util.jsDownloader(self._url, self._cookie_file)
         r = util.requests_ex(self._url, headers=self._get_heades(hasreferer=False))
+        if not r:
+            ilog.wflogger.warn('fail to down:%s' % self._url)
+            return None
         return r.content
 
     def _process_ajax_req(self, url):
-        time.sleep(12.5)
-        with open('link.url.txt', 'a') as fh:
-            fh.write("%s\n" % (url))
+        try:
+            time.sleep(12.5)
+            with open('link.url.txt', 'a') as fh:
+                fh.write("%s\n" % (url))
 
-        r = util.requests_ex(url, headers=self._headers)
-        with open('ajax.html', 'w') as fh:
-            fh.write(r.content)
-        content = r.content.strip("\n,)")
-        content_list = content.split('(')[1:]
-        content = '('.join(content_list)
-        content = content.replace("\\'", "'")
-        res_json = json.loads(content.decode('gbk'))
-        html_content = res_json['content']['offerResult']['html']
-        root_node = etree.HTML(html_content)
-        # open('ajax.html', 'w').write(html_content)
-        self._get_items_info(url, root_node)
+            r = util.requests_ex(url, headers=self._headers)
+            with open('ajax.html', 'w') as fh:
+                fh.write(r.content)
+            content = r.content.strip("\n,)")
+            content_list = content.split('(')[1:]
+            content = '('.join(content_list)
+            content = content.replace("\\'", "'")
+            res_json = json.loads(content.decode('gbk'))
+            html_content = res_json['content']['offerResult']['html']
+            root_node = etree.HTML(html_content)
+            # open('ajax.html', 'w').write(html_content)
+            self._get_items_info(url, root_node)
+        except Exception as e:
+            ilog.wflogger.warn('AKindCrawler::_process_ajax_req fail.url=%s, error=%s' % (url, traceback.format_exc()))
+
 
 
     def _get_items_info(self, url, root_node):
@@ -143,10 +150,11 @@ class AKindCrawler(object):
     def _process_first_page_ajax(self):
         # 第一页第一个ajax请求
         self._process_ajax_req(self._first_ajax_url)
+
         # 第一页第二个ajax请求
         self._ajax_qs_dict['_'] = int(time.time() * 1000)
         _ajax_url = self._url_prefix + '?' + urllib.urlencode(self._ajax_qs_dict)
-        self._process_ajax_req(self._first_ajax_url)
+        self._process_ajax_req(_ajax_url)
 
     def _process_other_pages_ajax(self):
         for page in xrange(2, self._total_pages + 1):
@@ -175,7 +183,9 @@ class AKindCrawler(object):
 
     def _process_first_page(self):
         _html_content = self._load_first_page_html()
-
+        if not _html_content:
+            # 前面已经记录错误信息，此处没必要记录
+            return
         with open(self._first_page_html_file, 'w') as fh:
             fh.write(_html_content)
         if not _html_content:
@@ -184,6 +194,7 @@ class AKindCrawler(object):
         root_node = etree.HTML(_html_content)
         item_cnt_nodes = root_node.xpath('//div[@class="sm-side"]/span[@class="sm-widget-offer"]/em')
         if not item_cnt_nodes:
+            ilog.wflogger.warn('no product item:%s' % self._url)
             return
         _total_item_cnt = int(item_cnt_nodes[0].text)
         print '_total_item_cnt:%s' % _total_item_cnt

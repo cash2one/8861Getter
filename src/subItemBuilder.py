@@ -25,6 +25,7 @@ class SubCateBuilder(object):
         self.sub_cate_url_list = []
         self._all_feature_info_list = []
         self._all_feature_code_list = []
+        self._selected_feature_list = []
         self._html_content = None
         self._total_item_cnt = 0
         self._cate = cate
@@ -82,7 +83,6 @@ class SubCateBuilder(object):
         self._total_item_cnt = int(item_cnt_nodes[0].text)
 
         nodes = root_node.xpath('//div[@class="sm-widget-sngroup"]//div[@type="feature"]')
-        feature_list = []
         i = 1
         for node in nodes:
             sub_feature_code_list = []
@@ -97,7 +97,7 @@ class SubCateBuilder(object):
             self._all_feature_code_list.append(sub_feature_code_list)
 
             if i in self._filter_feature_index_list:
-                feature_list.append(sub_feature_code_list)
+                self._selected_feature_list.append(sub_feature_code_list)
             i += 1
 
         price_nodes = root_node.xpath('//div[@class="sm-widget-sngroup"]//div[@type="feature_price"]')
@@ -107,7 +107,7 @@ class SubCateBuilder(object):
             name = value_node.attrib.get('cvalue', "")
             price_feature_list.append('%s' % name)
 
-        tmp_list = copy.deepcopy(feature_list)
+        tmp_list = copy.deepcopy(self._selected_feature_list)
         feature_params_list = self._genFeatureParams(tmp_list)
         ilog.logger.debug( '+++++++++++++ total %s groups +++++++++++++++' % len(feature_params_list))
         qs_plus_dict = {}
@@ -135,12 +135,22 @@ class SubCateBuilder(object):
 
     def print_feature_info(self, _to_screen=True):
         # print json.dumps(self._all_feature_info_list)
-        i = 1
         msg = '\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n\n'
         msg += '%s: total_item_cnt=%s\n' % (self._cate, self._total_item_cnt)
         msg += '---------------------------------------------------------\n\n'
         tmp_dict1 = {}
         tmp_dict2 = {}
+
+        # 获取选中属性能召回商品数
+        _all_selected_feature_codes_list = []
+        for one_feature_list in self._selected_feature_list:
+            _all_selected_feature_codes_list.extend(one_feature_list)
+        _all_selected_feature_codes = ','.join(_all_selected_feature_codes_list)
+        _all_selected_item_cnt = self._get_subCate_itemCnt(_all_selected_feature_codes)
+        msg += '%s: all_selected_item_cnt=%s\n' % (self._cate, _all_selected_item_cnt)
+        msg += '---------------------------------------------------------\n\n'
+
+        i = 1
         for one_feature_list in self._all_feature_info_list:
             one_feature_code_list = self._all_feature_code_list[i-1]
             feature_codes = ','.join(one_feature_code_list)
