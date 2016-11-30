@@ -42,14 +42,30 @@ class SubCateBuilder(object):
         }
         return _headers
 
-    def _get_html_content(self, url):
-        r = util.requests_ex(url, headers=self._headers())
-        return r.content
+    def _get_url_content(self, url):
+        for i in xrange(3):
+            # 可以在这里引入代理管理功能
+            proxy = None
+            r = util.requests_ex(url, headers=self._headers(), proxies=proxy)
+            if not r:
+                ilog.wflogger.warn('SubCateBuilder::_get_url_content:fail to get html content.url=%s, proxy=%s' % (url, json.dumps(proxy)))
+                continue
+            content = r.content
+
+            # 需要登录，认为该代理本次请求失败
+            if -1 != content.find('name="TPL_username"') and -1 != content.find('name="TPL_password"'):
+                ilog.wflogger.warn('SubCateBuilder::_get_url_content:proxy=%s need to login' % json.dumps(proxy))
+                continue
+            # 正常情况
+            return r.content
+
+        ilog.wflogger.warn('SubCateBuilder::_get_url_content:%s has try limited proxies.maybe it is a bad link.' % url)
+        return None
 
 
     def _init(self):
         self.sub_cate_url_list.append((self._seed, 'seeeed'))
-        self._html_content = self._get_html_content(self._seed)
+        self._html_content = self._get_url_content(self._seed)
         # self._html_content = util.jsDownloader(self._seed, self._cookie_file)
         with open('seed.html', 'w') as fh:
             fh.write(self._html_content)
@@ -147,10 +163,11 @@ class SubCateBuilder(object):
             if '' == _all_selected_feature_codes_str:
                 _all_selected_feature_codes_str = ','.join(one_feature_list)
             else:
-                _all_selected_feature_codes_str = ';' + ','.join(one_feature_list)
+                _all_selected_feature_codes_str += ';' + ','.join(one_feature_list)
         _all_selected_item_cnt = self._get_subCate_itemCnt(_all_selected_feature_codes_str)
         msg += '%s: all_selected_item_cnt=%s\n' % (self._cate, _all_selected_item_cnt)
         msg += '---------------------------------------------------------\n\n'
+        time.sleep(12.5)
 
         i = 1
         for one_feature_list in self._all_feature_info_list:
@@ -186,7 +203,7 @@ class SubCateBuilder(object):
         url = '%s&%s' % (self._seed, urllib.urlencode(qs_plus_dict))
         cnt = 0
         try:
-            html_content = self._get_html_content(url)
+            html_content = self._get_url_content(url)
             root_node = etree.HTML(html_content)
             item_cnt_nodes = root_node.xpath('//div[@class="sm-side"]/span[@class="sm-widget-offer"]/em')
             if not item_cnt_nodes:

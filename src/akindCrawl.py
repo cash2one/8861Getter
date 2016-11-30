@@ -87,11 +87,34 @@ class AKindCrawler(object):
 
     def _load_first_page_html(self):
         # return util.jsDownloader(self._url, self._cookie_file)
-        r = util.requests_ex(self._url, headers=self._get_heades(hasreferer=False))
-        if not r:
-            ilog.wflogger.warn('fail to down:%s' % self._url)
-            return None
-        return r.content
+        # r = util.requests_ex(self._url, headers=self._get_heades(hasreferer=False))
+        # if not r:
+        #     ilog.wflogger.warn('fail to down:%s' % self._url)
+        #     return None
+        # return r.content
+        return self._get_url_content(self._url, self._get_heades(hasreferer=False))
+
+    def _get_url_content(self, url, headers):
+        for i in xrange(3):
+            # 可以在这里引入代理管理功能
+            proxy = None
+            r = util.requests_ex(url, headers=headers, proxies=proxy)
+            if not r:
+                ilog.wflogger.warn('AKindCrawler::_get_url_content:fail to get html content.url=%s, proxy=%s' % (
+                url, json.dumps(proxy)))
+                continue
+            content = r.content
+
+            # 需要登录，认为该代理本次请求失败
+            if -1 != content.find('name="TPL_username"') and -1 != content.find('name="TPL_password"'):
+                ilog.wflogger.warn('AKindCrawler::_get_url_content:proxy=%s need to login' % json.dumps(proxy))
+                continue
+            # 正常情况
+            return r.content
+
+        ilog.wflogger.warn('AKindCrawler::_get_url_content:%s has try limited proxies.maybe it is a bad link.' % url)
+        return None
+
 
     def _process_ajax_req(self, url):
         try:
@@ -99,10 +122,11 @@ class AKindCrawler(object):
             with open('link.url.txt', 'a') as fh:
                 fh.write("%s\n" % (url))
 
-            r = util.requests_ex(url, headers=self._headers)
+            # r = util.requests_ex(url, headers=self._headers)
+            raw_content = self._get_url_content(url, self._headers)
             with open('ajax.html', 'w') as fh:
-                fh.write(r.content)
-            content = r.content.strip("\n,)")
+                fh.write(raw_content)
+            content = raw_content.strip("\n,)")
             content_list = content.split('(')[1:]
             content = '('.join(content_list)
             content = content.replace("\\'", "'")
